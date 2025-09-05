@@ -23,7 +23,6 @@ const TextInputComponent = ({
           style={[
             {
               borderWidth: 0.5,
-              // padding: 15,
               paddingVertical: 13,
               paddingLeft: 10,
               paddingRight: secureTextEntry ? 25 : 15,
