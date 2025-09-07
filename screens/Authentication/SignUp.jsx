@@ -5,20 +5,61 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import LabelComponent from "../../components/common/Label";
 import TextInputComponent from "../../components/common/TextInput";
 import PrimaryButton from "../../components/common/PrimaryButton";
 import SecondaryButton from "../../components/common/SecondaryButton";
 import { useNavigation } from "@react-navigation/native";
+import { authAPI } from "../../services/api";
 
 const SignUp = () => {
   const navigation = useNavigation();
+
+  const nameRef = useRef(null);
+  const emailRef = useRef(null);
+  const organizationRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [organization, setOrganization] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Check if form is valid
+  const isFormValid =
+    name.trim() !== "" &&
+    email.trim() !== "" &&
+    organization.trim() !== "" &&
+    password.trim() !== "";
+  console.log("isFormValid:", isFormValid);
+
+  const handleSignUp = async () => {
+    try {
+      setLoading(true);
+      const result = await authAPI.signup({
+        name,
+        email,
+        organization,
+        password,
+      });
+      console.log("SignUp successful:", result);
+
+      // Optional processing time
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Navigate to Login
+      // navigation.replace("Login");
+      navigation.goBack();
+    } catch (error) {
+      console.error("SignUp error:", error);
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.rootContainer}
@@ -57,13 +98,18 @@ const SignUp = () => {
       {/* Text Input Fields */}
       <View style={{ marginTop: 25, width: "100%" }}>
         <TextInputComponent
+          ref={nameRef} // Attach reference
           label="Your Name"
           labelStyle={{ fontWeight: "400", fontSize: 15 }}
           placeholder="Enter your full name"
           value={name}
           onChangeText={setName}
+          returnKeyType="next" // Show "Next" on keyboard
+          onSubmitEditing={() => emailRef.current.focus()} // Focus password input when "Next" is pressed
+          blurOnSubmit={false}
         />
         <TextInputComponent
+          ref={emailRef} // Attach reference
           label="Your Email"
           labelStyle={{ fontWeight: "400", fontSize: 15 }}
           placeholder="Enter your email-id"
@@ -71,12 +117,16 @@ const SignUp = () => {
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
+          returnKeyType="next" // Show "Next" on keyboard
+          onSubmitEditing={() => organizationRef.current.focus()} // Focus password input when "Next" is pressed
+          blurOnSubmit={false}
         />
         <View>
           <LabelComponent style={{ fontWeight: "400", fontSize: 15 }}>
             Your Organization's Name
           </LabelComponent>
           <TextInputComponent
+            ref={organizationRef} // Attach reference
             label="Enter a unique name for your organization"
             labelStyle={{
               fontWeight: "400",
@@ -88,6 +138,9 @@ const SignUp = () => {
             placeholder="Enter your organization's name"
             value={organization}
             onChangeText={setOrganization}
+            returnKeyType="next" // Show "Next" on keyboard
+            onSubmitEditing={() => passwordRef.current.focus()} // Focus password input when "Next" is pressed
+            blurOnSubmit={false}
           />
         </View>
         <View>
@@ -95,6 +148,7 @@ const SignUp = () => {
             Set Password
           </LabelComponent>
           <TextInputComponent
+            ref={passwordRef} // Attach reference
             label="Minimum 12 characters required"
             labelStyle={{
               fontWeight: "400",
@@ -116,7 +170,9 @@ const SignUp = () => {
       <PrimaryButton
         title="Create your account"
         titleStyle={{ color: "white", fontWeight: "bold" }}
-        onPress={() => console.log("Login pressed " + email + " " + password)}
+        disabled={!isFormValid} // Disable work on true and isFormValid is false so we use ! to turn to false to true.
+        loading={loading}
+        onPress={handleSignUp}
         style={{
           backgroundColor: "darkblue",
           padding: 10,
