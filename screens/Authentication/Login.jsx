@@ -16,6 +16,7 @@ import SecondaryButton from "../../components/common/SecondaryButton";
 import { useNavigation } from "@react-navigation/native";
 import { authAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message"; // ✅ Add this import
 
 // Validation Schema
 const loginValidationSchema = Yup.object().shape({
@@ -45,7 +46,6 @@ const Login = () => {
   //  const isFormValid = email.trim() !== "" && password.trim() !== "";
 
   const handleLogin = async (values, { setSubmitting, setFieldError }) => {
-    setSubmitting(true);
     try {
       //const result = await authAPI.login({ email, password });
       const result = await authAPI.login({
@@ -65,13 +65,29 @@ const Login = () => {
           // Note: Don't store password in AsyncStorage for security
         })
       );
+
+      // ✅ Success toast
+      Toast.show({
+        type: "success",
+        text1: "Login Successful!",
+        text2: `Welcome back, ${result.name || "User"}!`,
+        visibilityTime: 5000,
+      });
       // Simulate some processing time (optional)
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       // Navigate to the main app screen or dashboard
       navigation.navigate("HomeScreen");
     } catch (error) {
       console.error("Login error:", error);
-      alert(error.message);
+      //   alert(error.message);
+
+      // ✅ Error toast instead of alert
+      Toast.show({
+        type: "error",
+        text1: "Login Failed",
+        text2: error.message || "Please check your credentials and try again",
+        visibilityTime: 5000,
+      });
       // Set field-specific errors
       if (error.message.includes("Invalid credentials")) {
         setFieldError("email", "Invalid email or password");
@@ -102,8 +118,7 @@ const Login = () => {
           values,
           errors,
           touched,
-          handleChange,
-          handleBlur,
+
           setFieldValue, // ✅ Added setFieldValue
           setFieldTouched, // ✅ Added setFieldTouched
           handleSubmit,
@@ -147,7 +162,7 @@ const Login = () => {
                 onChangeText={(text) => setFieldValue("email", text)}
                 onBlur={() => setFieldTouched("email", true)} // ✅ Added onBlur
                 returnKeyType="next" // Show "Next" on keyboard
-                onSubmitEditing={() => passwordRef.current.focus()} // Focus password input when "Next" is pressed
+                onSubmitEditing={() => passwordRef.current?.focus()} // Focus password input when "Next" is pressed
                 blurOnSubmit={false}
                 error={touched.email && errors.email} //Formik integration
               />
@@ -250,6 +265,7 @@ const Login = () => {
           </>
         )}
       </Formik>
+      <Toast /> 
     </KeyboardAvoidingView>
   );
 };
