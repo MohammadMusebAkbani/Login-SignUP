@@ -13,7 +13,6 @@ const PrimaryButton = ({
   return (
     <TouchableOpacity
       style={[style, disabled && styles.disabled]}
-      //onPress={onPress}
       onPress={onPress}
       disabled={disabled}
       {...props}
@@ -22,6 +21,7 @@ const PrimaryButton = ({
         loading ? (<ActivityIndicator size="small" color="white" />
       ) : (
       
+      // <Text style={[titleStyle, disabled && styles.disabledText]}>{title}</Text>
       <Text style={[titleStyle, disabled && styles.disabledText]}>{title}</Text>
   )}
     </TouchableOpacity>
@@ -36,6 +36,6 @@ const styles = StyleSheet.create({
     backgroundColor: "gray", // Optional: change background color
   },
   disabledText: {
-    color: "black", // Optional: change text color when disabled
+    color: "white", // Optional: change text color when disabled
   },
 });

@@ -5,7 +5,7 @@ import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import LabelComponent from "./Label";
 
 const TextInputComponent = forwardRef(
-  ({ label, labelStyle, style, secureTextEntry = false, ...props }, ref) => {
+  ({ label, labelStyle, style,error, secureTextEntry = false, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     // Add this debug log to see what props are received
     console.log(`${label} - Props received:`, {
