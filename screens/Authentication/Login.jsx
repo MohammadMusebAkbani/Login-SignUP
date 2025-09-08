@@ -16,7 +16,7 @@ import SecondaryButton from "../../components/common/SecondaryButton";
 import { useNavigation } from "@react-navigation/native";
 import { authAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Toast from "react-native-toast-message"; // ✅ Add this import
+import Toast from "react-native-toast-message";
 
 // Validation Schema
 const loginValidationSchema = Yup.object().shape({
@@ -74,7 +74,7 @@ const Login = () => {
         visibilityTime: 5000,
       });
       // Simulate some processing time (optional)
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       // Navigate to the main app screen or dashboard
       navigation.navigate("HomeScreen");
     } catch (error) {
@@ -211,9 +211,9 @@ const Login = () => {
               // onPress={handleLogin}
               // disabled={!isFormValid} // Disable work on true and isFormValid is false so we use ! to turn to false to true.
               // loading={loading}
-              onPress={handleSubmit} // ✅ Use Formik's handleSubmit
-              disabled={!isValid || isSubmitting} // ✅ Use Formik's validation
-              loading={isSubmitting} // ✅ Use Formik's isSubmitting
+              onPress={handleSubmit} //  Use Formik's handleSubmit
+              disabled={!isValid || isSubmitting} //  Use Formik's validation
+              loading={isSubmitting} //  Use Formik's isSubmitting
               style={{
                 backgroundColor: "darkblue",
                 padding: 10,
@@ -265,7 +265,7 @@ const Login = () => {
           </>
         )}
       </Formik>
-      <Toast /> 
+      {/* <Toast />  */}
     </KeyboardAvoidingView>
   );
 };

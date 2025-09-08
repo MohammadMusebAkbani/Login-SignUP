@@ -7,6 +7,7 @@ import Login from "./screens/Authentication/Login";
 import SignUp from "./screens/Authentication/SignUp";
 import SimpleFrameIO from "./screens/Video/SimpleFrameIO";
 import HomeScreen from "./screens/HomeScreen";
+import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
 
 const Stack = createStackNavigator();
 
@@ -42,6 +43,36 @@ export default function App() {
           options={{ title: "Home Screen" }}
         />
       </Stack.Navigator>
+      {/* Toast at the very bottom - will persist across screens*/}
+      {/* <Toast /> */}
+      {/* Toast with bold text styling */}
+      <Toast
+        config={{
+          success: (internalState) => (
+            <BaseToast
+              {...internalState}
+              text1Style={{
+                fontWeight: "700", // Numeric bold for title
+              }}
+              text2Style={{
+                fontWeight: "900", // Numeric bold for subtitle
+              }}
+            />
+          ),
+          error: (internalState) => (
+            <ErrorToast
+              {...internalState}
+              text1Style={{
+                fontWeight: "700", // Numeric bold for title
+                
+              }}
+              text2Style={{
+                fontWeight: "900", // Numeric bold for subtitle
+              }}
+            />
+          ),
+        }}
+      />
     </NavigationContainer>
   );
 }
