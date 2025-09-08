@@ -7,12 +7,7 @@ import LabelComponent from "./Label";
 const TextInputComponent = forwardRef(
   ({ label, labelStyle, style,error, secureTextEntry = false, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
-    // Add this debug log to see what props are received
-    console.log(`${label} - Props received:`, {
-      onSubmitEditing: !!props.onSubmitEditing,
-      returnKeyType: props.returnKeyType,
-      blurOnSubmit: props.blurOnSubmit,
-    });
+  
     return (
       <View>
         <LabelComponent style={labelStyle}>{label}</LabelComponent>

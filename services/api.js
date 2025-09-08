@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// Replace with your actual IP address when testing on device
 //const BASE_URL = 'http://localhost:3000'; // For web
 const BASE_URL = "http://192.168.29.173:3000"; // For mobile device
 

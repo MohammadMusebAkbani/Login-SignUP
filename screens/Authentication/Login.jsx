@@ -17,6 +17,10 @@ import { useNavigation } from "@react-navigation/native";
 import { authAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
+//Redux imports
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { clearError, loginUser } from "../../store/authSlice";
 
 // Validation Schema
 const loginValidationSchema = Yup.object().shape({
@@ -30,77 +34,153 @@ const loginValidationSchema = Yup.object().shape({
 
 const Login = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { isLoading, error, isAuthenticated ,user} = useSelector(
+    (state) => state.auth
+  );
+
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
 
+  // Clear errors when component loads
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
+  // Navigate when login successful
+  useEffect(() => {
+    if (isAuthenticated) {
+      Toast.show({
+        type: "success",
+        text1: `Login Successful!`,
+        text2: `Welcome back! ${user.name || "User"}`,
+        visibilityTime: 3000,
+      });
+      navigation.navigate("HomeScreen");
+    }
+  }, [isAuthenticated, navigation]);
+
   // Initial values
   const initialValues = {
-    email: "mbtimber3@gmail.com", // Remove in production
-    password: "12345", // Remove in production
+    email: "akbani@gmail.com", // Remove in production
+    password: "123456789122", // Remove in production
   };
-  // const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
-  // const [loading, setLoading] = useState(false);
 
-  // Check if form is valid
-  //  const isFormValid = email.trim() !== "" && password.trim() !== "";
+  // const handleLogin = async (values, { setSubmitting, setFieldError }) => {
+  //   try {
+  //     const result = await authAPI.login({
+  //       email: values.email,
+  //       password: values.password,
+  //     });
+  //     console.log("Login successful:", result);
+  //     // Since your API returns the user object directly
+  //     await AsyncStorage.setItem("userToken", result.token);
+  //     await AsyncStorage.setItem(
+  //       "userData",
+  //       JSON.stringify({
+  //         id: result.id,
+  //         name: result.name,
+  //         email: result.email,
+  //         organization: result.organization,
+  //         // Note: Don't store password in AsyncStorage for security
+  //       })
+  //     );
+
+  //     // ✅ Success toast
+  //     Toast.show({
+  //       type: "success",
+  //       text1: "Login Successful!",
+  //       text2: `Welcome back, ${result.name || "User"}!`,
+  //       visibilityTime: 5000,
+  //     });
+  //     // Simulate some processing time (optional)
+  //     await new Promise((resolve) => setTimeout(resolve, 1000));
+  //     // Navigate to the main app screen or dashboard
+  //     navigation.navigate("HomeScreen");
+  //   } catch (error) {
+  //     console.error("Login error:", error);
+  //     //   alert(error.message);
+
+  //     // ✅ Error toast instead of alert
+  //     Toast.show({
+  //       type: "error",
+  //       text1: "Login Failed",
+  //       text2: error.message || "Please check your credentials and try again",
+  //       visibilityTime: 5000,
+  //     });
+  //     // Set field-specific errors
+  //     if (error.message.includes("Invalid credentials")) {
+  //       setFieldError("email", "Invalid email or password");
+  //       setFieldError("password", "Invalid email or password");
+  //     } else {
+  //       setFieldError("email", error.message);
+  //     }
+  //   } finally {
+  //     //setLoading(false);
+  //     setSubmitting(false); // ✅ Use Formik's setSubmitting instead of setLoading
+  //   }
+  // };
 
   const handleLogin = async (values, { setSubmitting, setFieldError }) => {
     try {
-      //const result = await authAPI.login({ email, password });
-      const result = await authAPI.login({
-        email: values.email,
-        password: values.password,
-      });
-      console.log("Login successful:", result);
-      // Since your API returns the user object directly
-      await AsyncStorage.setItem("userToken", result.token);
-      await AsyncStorage.setItem(
-        "userData",
-        JSON.stringify({
-          id: result.id,
-          name: result.name,
-          email: result.email,
-          organization: result.organization,
-          // Note: Don't store password in AsyncStorage for security
-        })
-      );
+      console.log("Starting login...", values); // Debug log
 
-      // ✅ Success toast
-      Toast.show({
-        type: "success",
-        text1: "Login Successful!",
-        text2: `Welcome back, ${result.name || "User"}!`,
-        visibilityTime: 5000,
-      });
-      // Simulate some processing time (optional)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Navigate to the main app screen or dashboard
-      navigation.navigate("HomeScreen");
+      // Clear any previous errors
+      dispatch(clearError());
+
+      // Use .unwrap() to properly handle the async thunk
+      const result = await dispatch(
+        loginUser({
+          email: values.email,
+          password: values.password,
+        })
+      ).unwrap();
+
+      console.log("Login result:", result); // Debug log
     } catch (error) {
       console.error("Login error:", error);
-      //   alert(error.message);
-
-      // ✅ Error toast instead of alert
       Toast.show({
         type: "error",
         text1: "Login Failed",
-        text2: error.message || "Please check your credentials and try again",
+        text2: error || "Please check your credentials and try again",
         visibilityTime: 5000,
       });
-      // Set field-specific errors
-      if (error.message.includes("Invalid credentials")) {
-        setFieldError("email", "Invalid email or password");
-        setFieldError("password", "Invalid email or password");
-      } else {
-        setFieldError("email", error.message);
-      }
     } finally {
-      //setLoading(false);
-      setSubmitting(false); // ✅ Use Formik's setSubmitting instead of setLoading
+      setSubmitting(false);
     }
   };
+  // const handleLogin = async (values, { setSubmitting, setFieldError }) => {
+  //   try {
+  //     const result = await dispatch(
+  //       loginUser({
+  //         email: values.email,
+  //         password: values.password,
+  //       })
+  //     );
+  //     if (loginUser.rejected.match(result)) {
+  //       // Handle errors
+  //       setFieldError("email", result.payload);
+  //       setFieldError("password", result.payload);
 
+  //       Toast.show({
+  //         type: "error",
+  //         text1: "Login Failed",
+  //         text2: result.payload,
+  //         visibilityTime: 5000,
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("Login error:", error);
+  //     Toast.show({
+  //       type: "error",
+  //       text1: "Login Failed",
+  //       text2: "Something went wrong",
+  //       visibilityTime: 5000,
+  //     });
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
   return (
     <KeyboardAvoidingView
       style={styles.rootContainer}

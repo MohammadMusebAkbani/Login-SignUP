@@ -2,49 +2,86 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-
+import Toast from 'react-native-toast-message';
+// Redux imports
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser } from '../store/authSlice';
 
 const HomeScreen = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  
+  // Get user data from Redux instead of AsyncStorage
+  const { user, isAuthenticated, isLoading } = useSelector((state) => state.auth);
 
-  // Load user data when component mounts
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadUserData = async () => {
-    try {
-      const userData = await AsyncStorage.getItem('userData');
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        console.log('User loaded:', parsedUser);
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      Alert.alert('Error', 'Failed to load user data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Debug log to see what's in Redux
+  console.log('HomeScreen Redux State:', { user, isAuthenticated, isLoading });
 
   const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem('userToken');
-      await AsyncStorage.removeItem('userData');
-      navigation.replace('Login'); // Navigate back to login
-    } catch (error) {
-      console.error('Logout error:', error);
-      Alert.alert('Error', 'Failed to logout');
-    }
+    Alert.alert(
+      'Confirm Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dispatch(logoutUser()).unwrap();
+              navigation.navigate('Login');
+              
+              Toast.show({
+                type: 'success',
+                text1: 'Logged Out',
+                text2: 'You have been successfully logged out',
+                visibilityTime: 2000,
+              });
+              
+              // Navigation will be handled automatically by App.js
+              // since isAuthenticated will become false
+            } catch (error) {
+              console.error('Logout error:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Logout Failed',
+                text2: error || 'Failed to logout. Please try again.',
+                visibilityTime: 3000,
+              });
+            }
+          },
+        },
+      ]
+    );
   };
 
-  if (loading) {
+  const handleNavigateToVideo = () => {
+    navigation.navigate('Video');
+  };
+
+  // Show loading screen while processing
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  // If no user data, show error (shouldn't happen with proper auth flow)
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>No user data found</Text>
+        <Text style={styles.errorSubText}>
+          There seems to be an issue with your session.
+        </Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Refresh Session</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -53,19 +90,50 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.welcomeText}>Welcome back!</Text>
-        <Text style={styles.welcomeText}>{user.organization}</Text>
-        {user && (
-          <Text style={styles.userName}>{user.name}</Text>
-          
-        )}
-        <Text style={styles.emailText}>{user?.email}</Text>
+        <Text style={styles.organizationText}>{user.organization}</Text>
+        <Text style={styles.userName}>{user.name}</Text>
+        <Text style={styles.emailText}>{user.email}</Text>
       </View>
 
       <View style={styles.content}>
         <Text style={styles.contentTitle}>Dashboard</Text>
         <Text style={styles.contentText}>
-          You are successfully logged in as {user?.name}
+          You are successfully logged in as {user.name}
         </Text>
+        <Text style={styles.contentText}>
+          Organization: {user.organization}
+        </Text>
+        <Text style={styles.contentText}>
+          User ID: {user.id}
+        </Text>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionContainer}>
+        <TouchableOpacity 
+          style={styles.actionButton} 
+          onPress={handleNavigateToVideo}
+        >
+          <Text style={styles.actionButtonText}>Video Review</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.secondaryButton]} 
+          onPress={() => {
+            // Add other navigation options here
+            console.log('Other features coming soon!');
+            Toast.show({
+              type: 'info',
+              text1: 'Coming Soon',
+              text2: 'More features will be available soon!',
+              visibilityTime: 2000,
+            });
+          }}
+        >
+          <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>
+            More Features
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity 
@@ -88,6 +156,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 10,
   },
   header: {
     backgroundColor: '#007AFF',
@@ -97,8 +171,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   welcomeText: {
+    fontSize: 16,
+    color: '#fff',
+    marginBottom: 5,
+  },
+  organizationText: {
     fontSize: 18,
     color: '#fff',
+    fontWeight: '600',
     marginBottom: 5,
   },
   userName: {
@@ -116,17 +196,66 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   contentTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 15,
     color: '#333',
   },
   contentText: {
     fontSize: 16,
     color: '#666',
     lineHeight: 22,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 50,
+    fontWeight: '600',
+  },
+  errorSubText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 10,
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    padding: 15,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#007AFF',
   },
   logoutButton: {
     backgroundColor: '#ff4444',
