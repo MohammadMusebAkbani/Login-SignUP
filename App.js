@@ -5,8 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import Login from "./screens/Authentication/Login";
 import SignUp from "./screens/Authentication/SignUp";
-import SimpleFrameIO from "./screens/Video/SimpleFrameIO";
-import HomeScreen from "./screens/HomeScreen";
+import TabNavigation from "./navigation/TabNavigation";
 import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
 import { useEffect } from "react";
 // Redux imports
@@ -42,30 +41,15 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={isAuthenticated ? "HomeScreen" : "Login"}
+        initialRouteName={isAuthenticated ? "TabNavigation" : "Login"}
         screenOptions={{
           headerShown: false,
         }}
       >
-        {/* Video screen available for both auth states */}
-        <Stack.Screen
-          name="Video"
-          component={SimpleFrameIO}
-          options={{ title: "Frame.io Video Review", headerShown: true }}
-        />
         {isAuthenticated ? (
           // Authenticated user screens
           <>
-            <Stack.Screen
-              name="HomeScreen"
-              component={HomeScreen}
-              options={{ title: "Home Screen", headerShown: true }}
-            />
-            {/* <Stack.Screen
-              name="Video"
-              component={SimpleFrameIO}
-              options={{ title: "Frame.io Video Review", headerShown: true }}
-            /> */}
+            <Stack.Screen name="TabNavigation" component={TabNavigation} />
           </>
         ) : (
           // Unauthenticated user screens
