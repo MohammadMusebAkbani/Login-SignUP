@@ -131,7 +131,7 @@ const SignUp = () => {
       } else if (error.includes("password") || error.includes("Password")) {
         setFieldError("password", error);
       } else {
-        setFieldError("email", error); // General error on email field
+        setFieldError("email", error); 
       }
       Toast.show({
         type: "error",
@@ -152,10 +152,10 @@ const SignUp = () => {
       {/* Formik integration */}
       <Formik
         initialValues={{
-          name: "Museb",
-          email: "akb@gmail.com",
-          organization: "MB Timber",
-          password: "12345678912",
+          name: "",
+          email: "",
+          organization: "",
+          password: "",
         }}
         validationSchema={SignUpValidationSchema}
         onSubmit={handleSignUp}
@@ -273,7 +273,7 @@ const SignUp = () => {
                 </LabelComponent>
                 <TextInputComponent
                   ref={passwordRef} // Attach reference
-                  label="Minimum 12 characters required"
+                  label="Minimum 6 characters required"
                   labelStyle={{
                     fontWeight: "400",
                     fontSize: 13,

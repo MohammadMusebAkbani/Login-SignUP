@@ -35,7 +35,7 @@ const loginValidationSchema = Yup.object().shape({
 const Login = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { isLoading, error, isAuthenticated ,user} = useSelector(
+  const { isLoading, error, isAuthenticated, user } = useSelector(
     (state) => state.auth
   );
 
@@ -62,68 +62,13 @@ const Login = () => {
 
   // Initial values
   const initialValues = {
-    email: "akbani@gmail.com", // Remove in production
-    password: "123456789122", // Remove in production
+    email: "akbani@gmail.com", // just for testing not for production
+    password: "123456789123", // just for testing not for production
   };
-
-  // const handleLogin = async (values, { setSubmitting, setFieldError }) => {
-  //   try {
-  //     const result = await authAPI.login({
-  //       email: values.email,
-  //       password: values.password,
-  //     });
-  //     console.log("Login successful:", result);
-  //     // Since your API returns the user object directly
-  //     await AsyncStorage.setItem("userToken", result.token);
-  //     await AsyncStorage.setItem(
-  //       "userData",
-  //       JSON.stringify({
-  //         id: result.id,
-  //         name: result.name,
-  //         email: result.email,
-  //         organization: result.organization,
-  //         // Note: Don't store password in AsyncStorage for security
-  //       })
-  //     );
-
-  //     // ✅ Success toast
-  //     Toast.show({
-  //       type: "success",
-  //       text1: "Login Successful!",
-  //       text2: `Welcome back, ${result.name || "User"}!`,
-  //       visibilityTime: 5000,
-  //     });
-  //     // Simulate some processing time (optional)
-  //     await new Promise((resolve) => setTimeout(resolve, 1000));
-  //     // Navigate to the main app screen or dashboard
-  //     navigation.navigate("HomeScreen");
-  //   } catch (error) {
-  //     console.error("Login error:", error);
-  //     //   alert(error.message);
-
-  //     // ✅ Error toast instead of alert
-  //     Toast.show({
-  //       type: "error",
-  //       text1: "Login Failed",
-  //       text2: error.message || "Please check your credentials and try again",
-  //       visibilityTime: 5000,
-  //     });
-  //     // Set field-specific errors
-  //     if (error.message.includes("Invalid credentials")) {
-  //       setFieldError("email", "Invalid email or password");
-  //       setFieldError("password", "Invalid email or password");
-  //     } else {
-  //       setFieldError("email", error.message);
-  //     }
-  //   } finally {
-  //     //setLoading(false);
-  //     setSubmitting(false); // ✅ Use Formik's setSubmitting instead of setLoading
-  //   }
-  // };
 
   const handleLogin = async (values, { setSubmitting, setFieldError }) => {
     try {
-      console.log("Starting login...", values); // Debug log
+      console.log("Starting login...", values);
 
       // Clear any previous errors
       dispatch(clearError());
@@ -136,7 +81,7 @@ const Login = () => {
         })
       ).unwrap();
 
-      console.log("Login result:", result); // Debug log
+      console.log("Login result:", result);
     } catch (error) {
       console.error("Login error:", error);
       Toast.show({
@@ -145,42 +90,19 @@ const Login = () => {
         text2: error || "Please check your credentials and try again",
         visibilityTime: 5000,
       });
+      // Handle specific error types
+      if (error.includes("email") || error.includes("Email")) {
+        setFieldError("email", error);
+      } else if (error.includes("password") || error.includes("Password")) {
+        setFieldError("password", error);
+      } else {
+        setFieldError("email", error);
+      }
     } finally {
       setSubmitting(false);
     }
   };
-  // const handleLogin = async (values, { setSubmitting, setFieldError }) => {
-  //   try {
-  //     const result = await dispatch(
-  //       loginUser({
-  //         email: values.email,
-  //         password: values.password,
-  //       })
-  //     );
-  //     if (loginUser.rejected.match(result)) {
-  //       // Handle errors
-  //       setFieldError("email", result.payload);
-  //       setFieldError("password", result.payload);
 
-  //       Toast.show({
-  //         type: "error",
-  //         text1: "Login Failed",
-  //         text2: result.payload,
-  //         visibilityTime: 5000,
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error("Login error:", error);
-  //     Toast.show({
-  //       type: "error",
-  //       text1: "Login Failed",
-  //       text2: "Something went wrong",
-  //       visibilityTime: 5000,
-  //     });
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
   return (
     <KeyboardAvoidingView
       style={styles.rootContainer}
@@ -198,9 +120,8 @@ const Login = () => {
           values,
           errors,
           touched,
-
-          setFieldValue, // ✅ Added setFieldValue
-          setFieldTouched, // ✅ Added setFieldTouched
+          setFieldValue,
+          setFieldTouched,
           handleSubmit,
           isSubmitting,
           isValid,
@@ -240,7 +161,7 @@ const Login = () => {
                 keyboardType="email-address"
                 value={values.email}
                 onChangeText={(text) => setFieldValue("email", text)}
-                onBlur={() => setFieldTouched("email", true)} // ✅ Added onBlur
+                onBlur={() => setFieldTouched("email", true)}
                 returnKeyType="next" // Show "Next" on keyboard
                 onSubmitEditing={() => passwordRef.current?.focus()} // Focus password input when "Next" is pressed
                 blurOnSubmit={false}
@@ -259,10 +180,10 @@ const Login = () => {
                 placeholder="********"
                 secureTextEntry={true}
                 value={values.password}
-                onChangeText={(text) => setFieldValue("password", text)} // ✅ Consistent with email
+                onChangeText={(text) => setFieldValue("password", text)}
                 onBlur={() => setFieldTouched("password", true)}
                 returnKeyType="done"
-                onSubmitEditing={handleSubmit} // ✅ Submit on done
+                onSubmitEditing={handleSubmit}
                 blurOnSubmit={true}
                 error={touched.password && errors.password} //Formik integration
               />

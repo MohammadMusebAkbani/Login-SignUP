@@ -296,7 +296,7 @@ export default function SimpleFrameIO() {
       id: Date.now(),
       text: newComment.trim(),
       timestamp: currentTime,
-      user: "CAZZ INC",
+      user: "Museb Akbani",
       createdAt: new Date().toISOString(),
       number: comments.length + 1,
     };

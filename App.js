@@ -1,137 +1,143 @@
-  import "react-native-gesture-handler";
-  import { StatusBar } from "expo-status-bar";
-  import { StyleSheet, Image, View } from "react-native";
-  import { NavigationContainer } from "@react-navigation/native";
-  import { createStackNavigator } from "@react-navigation/stack";
-  import Login from "./screens/Authentication/Login";
-  import SignUp from "./screens/Authentication/SignUp";
-  import SimpleFrameIO from "./screens/Video/SimpleFrameIO";
-  import HomeScreen from "./screens/HomeScreen";
-  import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
-  import { useEffect } from "react";
-  // Redux imports
-  import { Provider, useDispatch, useSelector } from "react-redux";
-  import { PersistGate } from "redux-persist/integration/react";
-  import { store, persistor } from "./store/store";
-  import { checkAuthState } from "./store/authSlice";
+import "react-native-gesture-handler";
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet, Image, View } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import Login from "./screens/Authentication/Login";
+import SignUp from "./screens/Authentication/SignUp";
+import SimpleFrameIO from "./screens/Video/SimpleFrameIO";
+import HomeScreen from "./screens/HomeScreen";
+import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
+import { useEffect } from "react";
+// Redux imports
+import { Provider, useDispatch, useSelector } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
+import { store, persistor } from "./store/store";
+import { checkAuthState } from "./store/authSlice";
 
-  const Stack = createStackNavigator();
+const Stack = createStackNavigator();
 
-  // App Navigator Component (needs to be inside Provider)
-  const AppNavigator = () => {
-    const dispatch = useDispatch();
-    const { isAuthenticated, isInitialized } = useSelector((state) => state.auth);
+// App Navigator Component (needs to be inside Provider)
+const AppNavigator = () => {
+  const dispatch = useDispatch();
+  const { isAuthenticated, isInitialized } = useSelector((state) => state.auth);
 
-    // Check auth state on app startup
-    useEffect(() => {
-      dispatch(checkAuthState());
-    }, [dispatch]);
+  // Check auth state on app startup
+  useEffect(() => {
+    dispatch(checkAuthState());
+  }, [dispatch]);
 
-    // Show loading screen while checking auth state
-    if (!isInitialized) {
-      return (
-        <View style={styles.loadingContainer}>
-          <Image
-            source={require("./assets/splash-icon.png")}
-            style={{ width: 400, height: 150, resizeMode: "cover" }}
-          />
-        </View>
-      );
-    }
-
+  // Show loading screen while checking auth state
+  if (!isInitialized) {
     return (
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName={isAuthenticated ? "HomeScreen" : "Login"}
-          screenOptions={{
-            headerShown: false, // You can customize this per screen
-          }}
-        >
-          {isAuthenticated ? (
-            // Authenticated user screens
-            <>
-              <Stack.Screen
-                name="HomeScreen"
-                component={HomeScreen}
-                options={{ title: "Home Screen", headerShown: true }}
-              />
-              <Stack.Screen
-                name="Video"
-                component={SimpleFrameIO}
-                options={{ title: "Frame.io Video Review", headerShown: true }}
-              />
-            </>
-          ) : (
-            // Unauthenticated user screens
-            <>
-              <Stack.Screen
-                name="Login"
-                component={Login}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="SignUp"
-                component={SignUp}
-                options={{ headerShown: false }}
-              />
-            </>
-          )}
-        </Stack.Navigator>
-
-        {/* Toast Configuration */}
-        <Toast
-          config={{
-            success: (internalState) => (
-              <BaseToast
-                {...internalState}
-                text1Style={{
-                  fontWeight: "700",
-                }}
-                text2Style={{
-                  fontWeight: "900",
-                }}
-              />
-            ),
-            error: (internalState) => (
-              <ErrorToast
-                {...internalState}
-                text1Style={{
-                  fontWeight: "700",
-                }}
-                text2Style={{
-                  fontWeight: "900",
-                }}
-              />
-            ),
-          }}
+      <View style={styles.loadingContainer}>
+        <Image
+          source={require("./assets/splash-icon.png")}
+          style={{ width: 400, height: 150, resizeMode: "cover" }}
         />
-      </NavigationContainer>
-    );
-  };
-
-  // Main App Component
-  export default function App() {
-    return (
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <AppNavigator />
-          <StatusBar style="auto" />
-        </PersistGate>
-      </Provider>
+      </View>
     );
   }
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#fff",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#fff",
-    },
-  });
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName={isAuthenticated ? "HomeScreen" : "Login"}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        {/* Video screen available for both auth states */}
+        <Stack.Screen
+          name="Video"
+          component={SimpleFrameIO}
+          options={{ title: "Frame.io Video Review", headerShown: true }}
+        />
+        {isAuthenticated ? (
+          // Authenticated user screens
+          <>
+            <Stack.Screen
+              name="HomeScreen"
+              component={HomeScreen}
+              options={{ title: "Home Screen", headerShown: true }}
+            />
+            {/* <Stack.Screen
+              name="Video"
+              component={SimpleFrameIO}
+              options={{ title: "Frame.io Video Review", headerShown: true }}
+            /> */}
+          </>
+        ) : (
+          // Unauthenticated user screens
+          <>
+            <Stack.Screen
+              name="Login"
+              component={Login}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="SignUp"
+              component={SignUp}
+              options={{ headerShown: false }}
+            />
+          </>
+        )}
+      </Stack.Navigator>
+
+      {/* Toast Configuration */}
+      <Toast
+        config={{
+          success: (internalState) => (
+            <BaseToast
+              {...internalState}
+              text1Style={{
+                fontWeight: "700",
+              }}
+              text2Style={{
+                fontWeight: "900",
+              }}
+            />
+          ),
+          error: (internalState) => (
+            <ErrorToast
+              {...internalState}
+              text1Style={{
+                fontWeight: "700",
+              }}
+              text2Style={{
+                fontWeight: "900",
+              }}
+            />
+          ),
+        }}
+      />
+    </NavigationContainer>
+  );
+};
+
+// Main App Component
+export default function App() {
+  return (
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <AppNavigator />
+        <StatusBar style="auto" />
+      </PersistGate>
+    </Provider>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+});
