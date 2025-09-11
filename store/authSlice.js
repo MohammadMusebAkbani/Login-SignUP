@@ -18,6 +18,7 @@ export const loginUser = createAsyncThunk(
           name: result.name,
           email: result.email,
           organization: result.organization,
+          profileImage: result.profileImage || null, // ✅ Add this line
         })
       );
       return result;
@@ -42,6 +43,7 @@ export const signupUser = createAsyncThunk(
           name: result.name,
           email: result.email,
           organization: result.organization,
+          profileImage: result.profileImage || null, // ✅ Add this line
         })
       );
 
@@ -85,6 +87,68 @@ export const checkAuthState = createAsyncThunk(
   }
 );
 
+// Update user profile (including all fields)
+export const updateUserProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (updateData, { rejectWithValue, getState }) => {
+    try {
+      const { userId, ...fieldsToUpdate } = updateData;
+
+      // 🔄 Update on server via api.js
+      const serverResponse = await authAPI.updateProfile(
+        userId,
+        fieldsToUpdate
+      );
+
+      // Get current user data from Redux state
+      const currentUser = getState().auth.user;
+
+      // Create complete updated user object
+      const completeUpdatedUser = {
+        ...currentUser,
+        ...fieldsToUpdate,
+      };
+
+      // Update AsyncStorage
+      const currentUserData = await AsyncStorage.getItem("user");
+      if (currentUserData) {
+        const userData = JSON.parse(currentUserData);
+        const updatedUserData = {
+          ...userData,
+          ...fieldsToUpdate,
+        };
+        await AsyncStorage.setItem("user", JSON.stringify(updatedUserData));
+      }
+
+      return completeUpdatedUser;
+    } catch (error) {
+      return rejectWithValue(error.message || "Profile update failed");
+    }
+  }
+);
+export const uploadProfileImage = createAsyncThunk(
+  "auth/uploadProfileImage",
+  async (imageData, { rejectWithValue, getState }) => {
+    try {
+      const { userId, imageUri } = imageData;
+      const updatedUser = await authAPI.uploadProfileImage(userId, imageUri);
+
+      const currentUserData = await AsyncStorage.getItem("user");
+      if (currentUserData) {
+        const userData = JSON.parse(currentUserData);
+        const updatedUserData = {
+          ...userData,
+          profileImage: updatedUser.profileImage,
+        };
+        await AsyncStorage.setItem("user", JSON.stringify(updatedUserData));
+      }
+
+      return updatedUser;
+    } catch (error) {
+      return rejectWithValue(error.message || "Image upload failed");
+    }
+  }
+);
 // Redux Slice
 const authSlice = createSlice({
   name: "auth",
@@ -110,6 +174,34 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+
+      // Update Profile Cases
+      .addCase(updateUserProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload; // Update user with new profile image
+        state.error = null;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(uploadProfileImage.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(uploadProfileImage.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(uploadProfileImage.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
       // Login cases
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;

@@ -1,23 +1,203 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+import { Formik } from "formik";
+import * as Yup from "yup";
+
+import Icon from "react-native-vector-icons/MaterialIcons";
+
 // Redux imports
 import { useDispatch, useSelector } from "react-redux";
-import { logoutUser } from '../../store/authSlice';
+import {
+  logoutUser,
+  updateUserProfile,
+  uploadProfileImage,
+} from "../../store/authSlice";
+import TextInputComponent from "../../components/common/TextInput";
+import PrimaryButton from "../../components/common/PrimaryButton";
+import { ScrollView } from "react-native-gesture-handler";
+
+// Validation schema
+const validationSchema = Yup.object().shape({
+  name: Yup.string()
+    .trim()
+    .required("Name is required")
+    .min(2, "Name must be at least 2 characters"),
+  email: Yup.string()
+    .trim()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
+  organization: Yup.string()
+    .trim()
+    .required("Organization is required")
+    .min(2, "Organization must be at least 2 characters"),
+});
 
 const Profile = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const [imageLoading, setImageLoading] = useState(false);
 
-  // Get user data from Redux instead of AsyncStorage
+  const nameRef = useRef(null);
+  const emailRef = useRef(null);
+  const organizationRef = useRef(null);
+
+  // Get user data from Redux
   const { user, isAuthenticated, isLoading } = useSelector(
     (state) => state.auth
   );
 
-  // Debug log to see what's in Redux
-  console.log("Profile Redux State:", { user, isAuthenticated, isLoading });
+  // Initial form values
+  const initialValues = {
+    name: user?.name || "",
+    email: user?.email || "",
+    organization: user?.organization || "",
+  };
+
+  useEffect(() => {
+    requestPermission();
+  }, []);
+
+  // Request camera/gallery permissions
+  const requestPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Required",
+        "Please grant permission to access photos"
+      );
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      setImageLoading(true);
+
+      // Dispatch update profile action
+
+      await dispatch(
+        updateUserProfile({
+          userId: user.id,
+          ...values,
+          profileImage: user.profileImage, // Keep existing image
+        })
+      ).unwrap();
+      setImageLoading(true);
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Profile updated successfully!",
+        visibilityTime: 2000,
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      Toast.show({
+        type: "error",
+        text1: "Update Failed",
+        text2: "Failed to update profile",
+        visibilityTime: 3000,
+      });
+    } finally {
+      setImageLoading(false);
+      setSubmitting(false);
+    }
+  };
+
+  // Show image picker options
+  const showImagePicker = () => {
+    Alert.alert(
+      "Select Profile Photo",
+      "Choose from where you want to select a photo",
+      [
+        { text: "Camera", onPress: openCamera },
+        { text: "Gallery", onPress: openGallery },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
+
+  // Open camera
+  const openCamera = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        handleImageUpload(result.assets[0]);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open camera");
+    }
+  };
+
+  // Open gallery
+  const openGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        handleImageUpload(result.assets[0]);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open gallery");
+    }
+  };
+
+  // Upload profile image
+  // ✅ Replace the current uploadProfileImage function with:
+  const handleImageUpload = async (imageAsset) => {
+    try {
+      setImageLoading(true);
+
+      // Use the Redux uploadProfileImage action
+      await dispatch(
+        uploadProfileImage({
+          userId: user.id,
+          imageUri: imageAsset.uri,
+        })
+      ).unwrap();
+
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Profile photo updated successfully!",
+        visibilityTime: 2000,
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      Toast.show({
+        type: "error",
+        text1: "Upload Failed",
+        text2: "Failed to update profile photo",
+        visibilityTime: 3000,
+      });
+    } finally {
+      setImageLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert("Confirm Logout", "Are you sure you want to logout?", [
@@ -39,9 +219,6 @@ const Profile = () => {
               text2: "You have been successfully logged out",
               visibilityTime: 2000,
             });
-
-            // Navigation will be handled automatically by App.js
-            // since isAuthenticated will become false
           } catch (error) {
             console.error("Logout error:", error);
             Toast.show({
@@ -56,17 +233,7 @@ const Profile = () => {
     ]);
   };
 
-
-  // Show loading screen while processing
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
-
-  // If no user data, show error (shouldn't happen with proper auth flow)
+  // If no user data, show error
   if (!user) {
     return (
       <View style={styles.container}>
@@ -82,29 +249,156 @@ const Profile = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome back!</Text>
-        <Text style={styles.organizationText}>{user.organization}</Text>
-        <Text style={styles.userName}>{user.name}</Text>
-        <Text style={styles.emailText}>{user.email}</Text>
-      </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 10}
+    >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Formik
+          initialValues={initialValues}
+          validationSchema={validationSchema}
+          onSubmit={handleSubmit}
+          enableReinitialize={true} // Reinitialize when user data changes
+        >
+          {({
+            values,
+            errors,
+            touched,
+            handleChange,
+            handleBlur,
+            handleSubmit,
+            isSubmitting,
+            resetForm,
+            dirty,
+          }) => (
+            <>
+              {/* Profile Image Section */}
+              <View style={styles.profileImageSection}>
+                <TouchableOpacity
+                  onPress={showImagePicker}
+                  style={styles.imageContainer}
+                >
+                  {imageLoading ? (
+                    <View style={styles.imageLoadingContainer}>
+                      <ActivityIndicator size="large" color="black" />
+                    </View>
+                  ) : user.profileImage ? (
+                    <Image
+                      source={{ uri: user.profileImage }}
+                      style={styles.profileImage}
+                    />
+                  ) : (
+                    <View style={styles.placeholderImage}>
+                      <Text style={styles.placeholderText}>Add Photo</Text>
+                    </View>
+                  )}
 
-      <View style={styles.content}>
-        <Text style={styles.contentTitle}>Dashboard</Text>
-        <Text style={styles.contentText}>
-          You are successfully logged in as {user.name}
-        </Text>
-        <Text style={styles.contentText}>
-          Organization: {user.organization}
-        </Text>
-        <Text style={styles.contentText}>User ID: {user.id}</Text>
-      </View>
+                  {/* Vector Icon in absolute position */}
+                  <View style={styles.iconContainer}>
+                    <Icon name="camera-alt" size={30} color="white" />
+                  </View>
+                </TouchableOpacity>
+              </View>
+              {/* Profile Information Form */}
+              <View style={styles.formContainer}>
+                {/* Name Field */}
+                <View style={styles.inputContainer}>
+                  <TextInputComponent
+                    ref={nameRef}
+                    label="Your Name"
+                    labelStyle={{ fontWeight: "400", fontSize: 13 }}
+                    placeholder="Enter your full name"
+                    value={values.name}
+                    onChangeText={handleChange("name")}
+                    onBlur={handleBlur("name")}
+                    returnKeyType="next"
+                    onSubmitEditing={() => emailRef.current?.focus()}
+                    blurOnSubmit={false}
+                  />
+                  {touched.name && errors.name && (
+                    <Text style={styles.errorText}>{errors.name}</Text>
+                  )}
+                </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
+                {/* Email Field */}
+                <View style={styles.inputContainer}>
+                  <TextInputComponent
+                    ref={emailRef}
+                    label="Email Address"
+                    labelStyle={{ fontWeight: "400", fontSize: 13 }}
+                    placeholder="Enter your email address"
+                    value={values.email}
+                    onChangeText={handleChange("email")}
+                    onBlur={handleBlur("email")}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    returnKeyType="next"
+                    onSubmitEditing={() => organizationRef.current?.focus()}
+                    blurOnSubmit={false}
+                  />
+                  {touched.email && errors.email && (
+                    <Text style={styles.errorText}>{errors.email}</Text>
+                  )}
+                </View>
+
+                {/* Organization Field */}
+                <View style={styles.inputContainer}>
+                  <TextInputComponent
+                    ref={organizationRef}
+                    label="Organization"
+                    labelStyle={{ fontWeight: "400", fontSize: 13 }}
+                    placeholder="Enter your organization"
+                    value={values.organization}
+                    onChangeText={handleChange("organization")}
+                    onBlur={handleBlur("organization")}
+                    returnKeyType="done"
+                  />
+                  {touched.organization && errors.organization && (
+                    <Text style={styles.errorText}>{errors.organization}</Text>
+                  )}
+                </View>
+
+                {/* Action Buttons */}
+                <PrimaryButton
+                  title="Save Changes"
+                  titleStyle={{ color: "white", fontWeight: "bold" }}
+                  disabled={!dirty || isSubmitting}
+                  loading={isSubmitting}
+                  onPress={handleSubmit} //  Use Formik's handleSubmit
+                  style={{
+                    backgroundColor: "darkblue",
+                    padding: 10,
+                    borderRadius: 5,
+                    alignItems: "center",
+                    marginTop: 10,
+                    width: "100%",
+                  }}
+                />
+              </View>
+            </>
+          )}
+        </Formik>
+
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
+
+        {/* Small Loading Bar */}
+        {isLoading && (
+          <View style={styles.smallLoadingContainer}>
+            <View style={styles.loadingBar}>
+              <ActivityIndicator size="small" color="black" />
+              <Text style={styles.loadingBarText}>Loading...</Text>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -114,121 +408,134 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     padding: 20,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-  },
-  loadingText: {
-    fontSize: 16,
-    color: "#666",
-    marginTop: 10,
-  },
-  header: {
-    backgroundColor: "#007AFF",
-    borderRadius: 10,
-    padding: 20,
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 5,
-  },
-  organizationText: {
-    fontSize: 18,
-    color: "#fff",
-    fontWeight: "600",
-    marginBottom: 5,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 5,
-  },
-  emailText: {
-    fontSize: 14,
-    color: "#e6f2ff",
-  },
-  content: {
+  formContainer: {
     backgroundColor: "#fff",
-    borderRadius: 10,
+    borderRadius: 15,
     padding: 20,
     marginBottom: 20,
-    shadowColor: "blue",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  contentTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-    color: "#333",
+  profileImageSection: {
+    alignItems: "center",
+    marginVertical: 10,
   },
-  contentText: {
+  imageContainer: {
+    width: 250,
+    height: 250,
+    position: "relative",
+    borderRadius: 140,
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  iconContainer: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileImage: {
+    width: 250,
+    height: 250,
+    borderRadius: 140,
+  },
+  placeholderImage: {
+    height: 250,
+    borderRadius: 140,
+    backgroundColor: "#e8e8e8",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    borderStyle: "dashed",
+  },
+  placeholderText: {
+    color: "#007AFF",
     fontSize: 16,
-    color: "#666",
-    lineHeight: 22,
-    marginBottom: 8,
+    fontWeight: "500",
+  },
+  imageLoadingContainer: {
+    width: 250,
+    height: 250,
+    borderRadius: 140,
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorText: {
-    fontSize: 18,
-    color: "red",
-    textAlign: "center",
-    marginTop: 50,
-    fontWeight: "600",
-  },
-  errorSubText: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 10,
-    marginBottom: 30,
-  },
-  actionContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    gap: 10,
-  },
-  actionButton: {
-    flex: 1,
-    backgroundColor: "#007AFF",
-    borderRadius: 8,
-    padding: 15,
-    alignItems: "center",
-  },
-  secondaryButton: {
-    backgroundColor: "#f0f0f0",
-    borderWidth: 1,
-    borderColor: "#007AFF",
-  },
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  secondaryButtonText: {
-    color: "#007AFF",
+    fontSize: 12,
+    color: "#FF3B30",
+    marginLeft: 5,
   },
   logoutButton: {
-    backgroundColor: "#ff4444",
+    backgroundColor: "#FF3B30",
     borderRadius: 8,
     padding: 15,
     alignItems: "center",
-    marginTop: "auto",
+    marginBottom: 20,
   },
   logoutButtonText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "600",
+  },
+  // Full Screen Loading Overlay Styles
+
+  smallLoadingContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingBar: {
+    flexDirection: "row",
+    height: 70,
+    width: "85%",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  loadingBarText: {
+    marginLeft: 25,
+    fontSize: 20,
+    color: "black",
     fontWeight: "bold",
   },
 });

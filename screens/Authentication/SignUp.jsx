@@ -50,7 +50,7 @@ const SignUp = () => {
   // Navigate to home if signup successful and authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigation.navigate("HomeScreen"); // or wherever you want to redirect
+      navigation.navigate("TabNavigation"); // or wherever you want to redirect
     }
   }, [isAuthenticated, navigation]);
 
@@ -58,48 +58,6 @@ const SignUp = () => {
   const emailRef = useRef(null);
   const organizationRef = useRef(null);
   const passwordRef = useRef(null);
-
-  // const handleSignUp = async (values, { setSubmitting, setFieldError }) => {
-  //   try {
-  //     const result = await authAPI.signup({
-  //       name: values.name,
-  //       email: values.email,
-  //       organization: values.organization,
-  //       password: values.password,
-  //     });
-  //     console.log("SignUp successful:", result);
-
-  //     //  Success toast
-  //     Toast.show({
-  //       type: "success",
-  //       text1: "Account Created Successfully!",
-  //       text2: `Hello ${values.name}! Please login to continue.`,
-  //       visibilityTime: 5000,
-  //     });
-  //     // Optional processing time
-  //     await new Promise((resolve) => setTimeout(resolve, 1000));
-  //     // Navigate to Login
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     console.error("SignUp error:", error);
-  //     // ✅ Error toast instead of alert
-  //     Toast.show({
-  //       type: "error",
-  //       text1: "SignUp Failed",
-  //       text2: error.message || "Please check your credentials and try again",
-  //       visibilityTime: 5000,
-  //     });
-  //     // Set field-specific errors
-  //     if (error.message.includes("Invalid credentials")) {
-  //       setFieldError("email", "Invalid email or password");
-  //       setFieldError("password", "Invalid email or password");
-  //     } else {
-  //       setFieldError("email", error.message);
-  //     }
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
 
   const handleSignUp = async (values, { setSubmitting, setFieldError }) => {
     try {
@@ -131,7 +89,7 @@ const SignUp = () => {
       } else if (error.includes("password") || error.includes("Password")) {
         setFieldError("password", error);
       } else {
-        setFieldError("email", error); 
+        setFieldError("email", error);
       }
       Toast.show({
         type: "error",
@@ -159,6 +117,7 @@ const SignUp = () => {
         }}
         validationSchema={SignUpValidationSchema}
         onSubmit={handleSignUp}
+        validateOnMount={true}
       >
         {({
           handleChange,
@@ -301,8 +260,6 @@ const SignUp = () => {
             <PrimaryButton
               title="Create your account"
               titleStyle={{ color: "white", fontWeight: "bold" }}
-              // disabled={!isFormValid} // Disable work on true and isFormValid is false so we use ! to turn to false to true.
-              // loading={loading}
               disabled={!isValid || isSubmitting}
               loading={isSubmitting}
               onPress={handleSubmit} //  Use Formik's handleSubmit

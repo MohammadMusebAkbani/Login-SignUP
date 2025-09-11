@@ -56,7 +56,7 @@ const Login = () => {
         text2: `Welcome back! ${user.name || "User"}`,
         visibilityTime: 3000,
       });
-      navigation.navigate("HomeScreen");
+      navigation.navigate("TabNavigation");
     }
   }, [isAuthenticated, navigation]);
 
@@ -115,6 +115,7 @@ const Login = () => {
         initialValues={initialValues}
         validationSchema={loginValidationSchema}
         onSubmit={handleLogin}
+        validateOnMount={true}
       >
         {({
           values,
@@ -209,9 +210,6 @@ const Login = () => {
             <PrimaryButton
               title="Login"
               titleStyle={{ color: "white", fontWeight: "bold" }}
-              // onPress={handleLogin}
-              // disabled={!isFormValid} // Disable work on true and isFormValid is false so we use ! to turn to false to true.
-              // loading={loading}
               onPress={handleSubmit} //  Use Formik's handleSubmit
               disabled={!isValid || isSubmitting} //  Use Formik's validation
               loading={isSubmitting} //  Use Formik's isSubmitting

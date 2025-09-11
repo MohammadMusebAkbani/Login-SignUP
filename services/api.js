@@ -11,7 +11,6 @@ const api = axios.create({
 });
 
 export const authAPI = {
-  
   signup: async (userData) => {
     try {
       // Check if user already exists
@@ -30,6 +29,7 @@ export const authAPI = {
         email: userData.email,
         organization: userData.organization,
         password: userData.password, // In production, store hashed password
+        profileImage: null, // ✅ Add this line
         createdAt: new Date().toISOString(),
         token: token,
       };
@@ -42,6 +42,7 @@ export const authAPI = {
           name: response.data.name,
           email: response.data.email,
           organization: response.data.organization,
+          profileImage: response.data.profileImage, // ✅ Add this line
         },
         token: token,
       };
@@ -49,29 +50,59 @@ export const authAPI = {
       throw error;
     }
   },
+  // ✅ New update function
+  updateProfile: async (userId, fieldsToUpdate) => {
+    const response = await api.patch(`/users/${userId}`, fieldsToUpdate);
+    return response.data;
+  },
+  uploadProfileImage: async (userId, imageUri) => {
+    try {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const base64Data = reader.result;
+            const updateResponse = await api.patch(`/users/${userId}`, {
+              profileImage: base64Data,
+            });
+            resolve(updateResponse.data);
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
   // Login user
   login: async (credentials) => {
-  try {
-    console.log("Searching for user with email:", credentials.email);
-    
-    const response = await api.get(`/users?email=${credentials.email}&password=${credentials.password}`);
-    
-    console.log("API found users:", response.data);
-    
-    if (response.data.length === 0) {
-      throw new Error("Invalid credentials");
+    try {
+      console.log("Searching for user with email:", credentials.email);
+
+      const response = await api.get(
+        `/users?email=${credentials.email}&password=${credentials.password}`
+      );
+
+      console.log("API found users:", response.data);
+
+      if (response.data.length === 0) {
+        throw new Error("Invalid credentials");
+      }
+
+      const user = response.data[0];
+      console.log("User found:", user);
+
+      return user;
+    } catch (error) {
+      throw error;
     }
-
-    const user = response.data[0];
-    console.log("User found:", user);
-
-    return user;
-  } catch (error) {
-    throw error;
-  }
-},
-  // Logout user
-
+  },
 };
 
 export default api;
