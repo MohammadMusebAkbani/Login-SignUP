@@ -79,7 +79,7 @@ const Profile = () => {
   };
 
   // Handle form submission
- // Handle form submission - CORRECTED
+  // Handle form submission - CORRECTED
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       setSubmitting(true);
@@ -87,12 +87,12 @@ const Profile = () => {
       // Dispatch update profile action
       await dispatch(
         updateUserProfile({
-          userId: user.id,
+          userId: Number(user.id),
           ...values,
           profileImage: user.profileImage, // Keep existing image
         })
       ).unwrap();
-      
+
       Toast.show({
         type: "success",
         text1: "Success",
@@ -176,7 +176,7 @@ const Profile = () => {
       // Dispatch update profile action with image only
       await dispatch(
         updateUserProfile({
-          userId: user.id,
+          userId: Number(user.id),
           profileImage: base64Image,
         })
       ).unwrap();
@@ -389,7 +389,7 @@ const Profile = () => {
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
 
-        {/* Small Loading Bar */}
+        {/* Small Loading Bar
         {isLoading && (
           <View style={styles.smallLoadingContainer}>
             <View style={styles.loadingBar}>
@@ -397,7 +397,7 @@ const Profile = () => {
               <Text style={styles.loadingBarText}>Loading...</Text>
             </View>
           </View>
-        )}
+        )} */}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -462,16 +462,16 @@ const styles = StyleSheet.create({
   },
   placeholderImage: {
     height: 250,
+    width: 250,
     borderRadius: 140,
     backgroundColor: "#e8e8e8",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#007AFF",
-    borderStyle: "dashed",
+    borderColor: "black",
   },
   placeholderText: {
-    color: "#007AFF",
+    color: "black",
     fontSize: 16,
     fontWeight: "500",
   },

@@ -20,8 +20,8 @@ export const authAPI = {
       }
       // Create new user
       // Generate ID first
-     // const userId = Date.now();
-      const userId = Date.now().toString();
+      const userId = Date.now();
+     // const userId = Date.now().toString();
       // Generate a simple token (in production, use JWT)
       const token = `token_${Date.now()}_${userId}`;
       const newUser = {
@@ -60,7 +60,7 @@ export const authAPI = {
   updateProfile: async (userId, fieldsToUpdate) => {
     // First get the current user data
     const currentUser = await api.get(`/users/${userId}`);
-
+    console.log("Current user data:", userId);
     // Merge the existing data with the updates
     const updatedUser = {
       ...currentUser.data,
