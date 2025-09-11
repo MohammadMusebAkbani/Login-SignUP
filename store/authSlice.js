@@ -102,7 +102,7 @@ export const updateUserProfile = createAsyncThunk(
 
       // Call the API to update the profile and get the updated user object
       const serverResponse = await authAPI.updateProfile(Number(userId),  fieldsToUpdate);
-      console.log("✅ Server response:", serverResponse);
+    //  console.log("✅ Server response:", serverResponse);
 
       // Save the updated user object to AsyncStorage
       await AsyncStorage.setItem("user", JSON.stringify(serverResponse));

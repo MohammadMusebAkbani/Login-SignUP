@@ -20,8 +20,8 @@ export const authAPI = {
       }
       // Create new user
       // Generate ID first
-      const userId = Date.now();
-     // const userId = Date.now().toString();
+      //const userId = Date.now();
+     const userId = Date.now().toString();
       // Generate a simple token (in production, use JWT)
       const token = `token_${Date.now()}_${userId}`;
       const newUser = {
