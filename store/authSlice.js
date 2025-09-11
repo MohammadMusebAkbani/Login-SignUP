@@ -9,7 +9,7 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const result = await authAPI.login(credentials);
-      //Store token in AsyncStorage
+      // Store token in AsyncStorage
       await AsyncStorage.setItem("userToken", result.token);
       await AsyncStorage.setItem(
         "user",
@@ -18,7 +18,7 @@ export const loginUser = createAsyncThunk(
           name: result.name,
           email: result.email,
           organization: result.organization,
-          profileImage: result.profileImage || null, // ✅ Add this line
+          profileImage: result.profileImage || null,
         })
       );
       return result;
@@ -27,6 +27,7 @@ export const loginUser = createAsyncThunk(
     }
   }
 );
+
 // Signup user
 export const signupUser = createAsyncThunk(
   "auth/signup",
@@ -43,7 +44,7 @@ export const signupUser = createAsyncThunk(
           name: result.name,
           email: result.email,
           organization: result.organization,
-          profileImage: result.profileImage || null, // ✅ Add this line
+          profileImage: result.profileImage || null,
         })
       );
 
@@ -53,6 +54,7 @@ export const signupUser = createAsyncThunk(
     }
   }
 );
+
 export const logoutUser = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
@@ -90,66 +92,30 @@ export const checkAuthState = createAsyncThunk(
 // Update user profile (including all fields)
 export const updateUserProfile = createAsyncThunk(
   "auth/updateProfile",
-  async (updateData, { rejectWithValue, getState }) => {
+  async (updateData, { rejectWithValue }) => {
     try {
       const { userId, ...fieldsToUpdate } = updateData;
 
-      // 🔄 Update on server via api.js
-      const serverResponse = await authAPI.updateProfile(
-        userId,
-        fieldsToUpdate
-      );
+      console.log("🔄 Starting profile update...");
+      console.log("👤 User ID:", userId);
+    //  console.log("📝 Fields to update:", fieldsToUpdate);
 
-      // Get current user data from Redux state
-      const currentUser = getState().auth.user;
+      // Call the API to update the profile and get the updated user object
+      const serverResponse = await authAPI.updateProfile(Number(userId),  fieldsToUpdate);
+      console.log("✅ Server response:", serverResponse);
 
-      // Create complete updated user object
-      const completeUpdatedUser = {
-        ...currentUser,
-        ...fieldsToUpdate,
-      };
+      // Save the updated user object to AsyncStorage
+      await AsyncStorage.setItem("user", JSON.stringify(serverResponse));
 
-      // Update AsyncStorage
-      const currentUserData = await AsyncStorage.getItem("user");
-      if (currentUserData) {
-        const userData = JSON.parse(currentUserData);
-        const updatedUserData = {
-          ...userData,
-          ...fieldsToUpdate,
-        };
-        await AsyncStorage.setItem("user", JSON.stringify(updatedUserData));
-      }
-
-      return completeUpdatedUser;
+      // Return the updated user object to update Redux state
+      return serverResponse;
     } catch (error) {
+      console.log("❌ Profile update failed:", error.message);
       return rejectWithValue(error.message || "Profile update failed");
     }
   }
 );
-export const uploadProfileImage = createAsyncThunk(
-  "auth/uploadProfileImage",
-  async (imageData, { rejectWithValue, getState }) => {
-    try {
-      const { userId, imageUri } = imageData;
-      const updatedUser = await authAPI.uploadProfileImage(userId, imageUri);
 
-      const currentUserData = await AsyncStorage.getItem("user");
-      if (currentUserData) {
-        const userData = JSON.parse(currentUserData);
-        const updatedUserData = {
-          ...userData,
-          profileImage: updatedUser.profileImage,
-        };
-        await AsyncStorage.setItem("user", JSON.stringify(updatedUserData));
-      }
-
-      return updatedUser;
-    } catch (error) {
-      return rejectWithValue(error.message || "Image upload failed");
-    }
-  }
-);
-// Redux Slice
 const authSlice = createSlice({
   name: "auth",
   initialState: {
@@ -174,7 +140,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-
       // Update Profile Cases
       .addCase(updateUserProfile.pending, (state) => {
         state.isLoading = true;
@@ -186,19 +151,6 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      .addCase(uploadProfileImage.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(uploadProfileImage.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload;
-        state.error = null;
-      })
-      .addCase(uploadProfileImage.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -218,7 +170,6 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-
       // Signup cases
       .addCase(signupUser.pending, (state) => {
         state.isLoading = true;
@@ -228,15 +179,13 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload;
         state.token = action.payload.token;
-        // state.isAuthenticated = true;
-        state.isAuthenticated = false;
+        state.isAuthenticated = false; // User must login after signup
         state.error = null;
       })
       .addCase(signupUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
-
       // Logout cases
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
@@ -245,13 +194,13 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = null;
       })
-      // ✅ CheckAuthState cases
+      // CheckAuthState cases
       .addCase(checkAuthState.pending, (state) => {
         state.isLoading = true;
       })
       .addCase(checkAuthState.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.isInitialized = true; // <-- important!
+        state.isInitialized = true;
         if (action.payload) {
           state.user = action.payload;
           state.token = action.payload.token;
@@ -264,7 +213,7 @@ const authSlice = createSlice({
       })
       .addCase(checkAuthState.rejected, (state, action) => {
         state.isLoading = false;
-        state.isInitialized = true; // <-- also set this here
+        state.isInitialized = true;
         state.error = action.payload;
       });
   },

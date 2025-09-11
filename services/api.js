@@ -51,35 +51,26 @@ export const authAPI = {
     }
   },
   // ✅ New update function
+  // updateProfile: async (userId, fieldsToUpdate) => {
+  //   const response = await api.put(`/users/${userId}`, fieldsToUpdate);
+  //   return response.data;
+  // },
+  // FIXED: Use PUT instead of PATCH for json-server
   updateProfile: async (userId, fieldsToUpdate) => {
-    const response = await api.patch(`/users/${userId}`, fieldsToUpdate);
+    // First get the current user data
+    const currentUser = await api.get(`/users/${userId}`);
+
+    // Merge the existing data with the updates
+    const updatedUser = {
+      ...currentUser.data,
+      ...fieldsToUpdate,
+    };
+
+    // Use PUT to update the entire user object
+    const response = await api.put(`/users/${userId}`, updatedUser);
     return response.data;
   },
-  uploadProfileImage: async (userId, imageUri) => {
-    try {
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
 
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          try {
-            const base64Data = reader.result;
-            const updateResponse = await api.patch(`/users/${userId}`, {
-              profileImage: base64Data,
-            });
-            resolve(updateResponse.data);
-          } catch (error) {
-            reject(error);
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (error) {
-      throw error;
-    }
-  },
   // Login user
   login: async (credentials) => {
     try {

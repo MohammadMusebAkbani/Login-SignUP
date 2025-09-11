@@ -21,11 +21,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 
 // Redux imports
 import { useDispatch, useSelector } from "react-redux";
-import {
-  logoutUser,
-  updateUserProfile,
-  uploadProfileImage,
-} from "../../store/authSlice";
+import { logoutUser, updateUserProfile } from "../../store/authSlice";
 import TextInputComponent from "../../components/common/TextInput";
 import PrimaryButton from "../../components/common/PrimaryButton";
 import { ScrollView } from "react-native-gesture-handler";
@@ -83,12 +79,12 @@ const Profile = () => {
   };
 
   // Handle form submission
+ // Handle form submission - CORRECTED
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      setImageLoading(true);
+      setSubmitting(true);
 
       // Dispatch update profile action
-
       await dispatch(
         updateUserProfile({
           userId: user.id,
@@ -96,7 +92,7 @@ const Profile = () => {
           profileImage: user.profileImage, // Keep existing image
         })
       ).unwrap();
-      setImageLoading(true);
+      
       Toast.show({
         type: "success",
         text1: "Success",
@@ -112,7 +108,6 @@ const Profile = () => {
         visibilityTime: 3000,
       });
     } finally {
-      setImageLoading(false);
       setSubmitting(false);
     }
   };
@@ -141,7 +136,7 @@ const Profile = () => {
       });
 
       if (!result.canceled) {
-        handleImageUpload(result.assets[0]);
+        uploadProfileImage(result.assets[0]);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to open camera");
@@ -159,7 +154,7 @@ const Profile = () => {
       });
 
       if (!result.canceled) {
-        handleImageUpload(result.assets[0]);
+        uploadProfileImage(result.assets[0]);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to open gallery");
@@ -167,16 +162,22 @@ const Profile = () => {
   };
 
   // Upload profile image
-  // ✅ Replace the current uploadProfileImage function with:
-  const handleImageUpload = async (imageAsset) => {
+  const uploadProfileImage = async (imageAsset) => {
     try {
       setImageLoading(true);
 
-      // Use the Redux uploadProfileImage action
+      // Convert image to base64
+      const base64 = await FileSystem.readAsStringAsync(imageAsset.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const base64Image = `data:image/jpeg;base64,${base64}`;
+
+      // Dispatch update profile action with image only
       await dispatch(
-        uploadProfileImage({
+        updateUserProfile({
           userId: user.id,
-          imageUri: imageAsset.uri,
+          profileImage: base64Image,
         })
       ).unwrap();
 
